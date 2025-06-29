@@ -14,7 +14,7 @@
         }
         .blue-background {
             color: white;        
-            background-color: blue; 
+            background-color: blue;  
             font-size: 30px;
         }
     </style>
@@ -38,7 +38,6 @@
 
 
 function normalizeArabic(text) {
-    // Remove diacritics, hamza (أ), and normalize spaces
     return text
         .replace(/أ/g, 'ا') // Normalize hamza to alif
         .replace(/\s+/g, ' ') // Normalize spaces
@@ -46,8 +45,8 @@ function normalizeArabic(text) {
 }
 
 var fullquran = '';
-var splitted = []; // Make splitted global
-var startTime = null; // Track when voice activity starts for transcription latency
+var splitted = []; 
+var startTime = null; 
 
 // Function to read the Quran.txt file
 async function loadQuranText() {
@@ -101,9 +100,9 @@ if (parts.length === 2) {
   // Insert Surah 9 (Tawbah) at index 9, pushing others forward
   rawSplits.splice(9, 0, surah9);
 
-  console.log('✅ Surah 8:', rawSplits[8].substring(0, 100));
-  console.log('✅ Surah 9:', rawSplits[9].substring(0, 100));
-  console.log('✅ Surah 10:', rawSplits[10].substring(0, 100));
+  console.log(' Surah 8:', rawSplits[8].substring(0, 100));
+  console.log(' Surah 9:', rawSplits[9].substring(0, 100));
+  console.log(' Surah 10:', rawSplits[10].substring(0, 100));
   console.log(rawSplits[11]);
 } else {
   console.warn("⚠️ Could not find Tawbah start in Surah 8");
