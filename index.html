@@ -52,7 +52,7 @@ var startTime = null;
 async function loadQuranText() {
 
     try {
-        const response = await fetch('Quran.txt');
+        const response = await fetch('/Quran.txt');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
