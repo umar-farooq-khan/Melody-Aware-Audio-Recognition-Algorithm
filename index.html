@@ -17,12 +17,73 @@
             background-color: blue;  
             font-size: 30px;
         }
+        
+
+        
+        .speech-dots {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin: 20px 0;
+        }
+        
+        .speech-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #ccc;
+            transition: all 0.3s ease;
+        }
+        
+        .speech-dot.active {
+            animation: colorChange 1.5s infinite;
+        }
+        
+        .speech-dot:nth-child(1).active {
+            animation-delay: 0s;
+        }
+        
+        .speech-dot:nth-child(2).active {
+            animation-delay: 0.2s;
+        }
+        
+        .speech-dot:nth-child(3).active {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes colorChange {
+            0% {
+                background-color: #ff6b6b;
+                transform: scale(1);
+            }
+            25% {
+                background-color: #4ecdc4;
+                transform: scale(1.2);
+            }
+            50% {
+                background-color: #45b7d1;
+                transform: scale(1.4);
+            }
+            75% {
+                background-color: #96ceb4;
+                transform: scale(1.2);
+            }
+            100% {
+                background-color: #ff6b6b;
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 <body>
-    <button id="startButton">Start!!!</button>
     <h1 id="surahname">Surah: </h1>
-        <h1 id="qurantext">Quran text: </h1>
+    <h1 id="qurantext">Quran text: </h1>
+    <div id="speechDots" class="speech-dots" style="display: none;">
+        <div class="speech-dot"></div>
+        <div class="speech-dot"></div>
+        <div class="speech-dot"></div>
+    </div>
 
     <p id="output1"></p>
     <p id="output2"></p>
@@ -112,7 +173,7 @@ function initializeApp() {
 }
 
 function initializeSpeechRecognition() {
-    const startButton = document.getElementById('startButton');
+    const speechDots = document.getElementById('speechDots');
     const outputElements = [
         document.getElementById('output1'),
         document.getElementById('output2'),
@@ -132,6 +193,18 @@ function initializeSpeechRecognition() {
     let myArray = [];
     let isRecognizing = false;
     let speechRecognitionStartTime = null; // Track when speech recognition starts
+    
+    function showSpeechDots() {
+        speechDots.style.display = 'flex';
+        const dots = speechDots.querySelectorAll('.speech-dot');
+        dots.forEach(dot => dot.classList.add('active'));
+    }
+    
+    function hideSpeechDots() {
+        speechDots.style.display = 'none';
+        const dots = speechDots.querySelectorAll('.speech-dot');
+        dots.forEach(dot => dot.classList.remove('active'));
+    }
     
     if (!isRecognizing) {
         console.log('Speech recognition started');
@@ -161,8 +234,6 @@ function initializeSpeechRecognition() {
             const speechRecognitionEndTime = Date.now();
             const speechRecognitionLatency = (speechRecognitionEndTime - speechRecognitionStartTime); // Keep in milliseconds
             console.log(`Speech Recognition Latency: ${speechRecognitionLatency} milliseconds`);
-            // Display the speech recognition latency
-            //document.getElementById('output1').textContent = `Speech Recognition Latency: ${speechRecognitionLatency} milliseconds`;
             // Reset the start time for next recognition
             speechRecognitionStartTime = null;
         }
@@ -170,12 +241,19 @@ function initializeSpeechRecognition() {
         var transcript = event.results[event.results.length - 1][0].transcript;
         console.log(transcript);
 
+        // Show animated dots when speech is detected
+        showSpeechDots();
+        
+        // Hide dots after 2 seconds
+        setTimeout(() => {
+            hideSpeechDots();
+        }, 2000);
+
         transcript = normalizeArabic(transcript);
         for (i = 0; i < splitted.length; i++) {
             startTime = Date.now(); // Start timing for transcription latency from voice activity
 
             stringSimilarity(splitted[i], transcript, i, startTime);
-           // document.getElementById('output2').textContent = transcript;
         }
     };
 
@@ -183,13 +261,6 @@ function initializeSpeechRecognition() {
         console.log('Speech started');
         speechRecognitionStartTime = Date.now(); // Record when speech recognition starts
     };
-
-    startButton.addEventListener('click', () => {
-        if (!isRecognizing) {
-            console.log('Speech recognition started');
-            recognition.start();
-        }
-    });
 }
 
 function stringSimilarity_secondalgo(a, b) {
