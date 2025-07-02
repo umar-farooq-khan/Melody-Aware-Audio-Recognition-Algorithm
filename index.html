@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quranic Speech Recognition Algorithm</title>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 20px;
+        }
+        .blue-background {
+            color: white;        
+            background-color: blue;  
+            font-size: 30px;
+        }
+    </style>
+</head>
+<body>
+    <button id="startButton">Start!!!</button>
+    <h1 id="surahname">Surah: </h1>
+        <h1 id="qurantext">Quran text: </h1>
+
+    <p id="output1"></p>
+    <p id="output2"></p>
+    <p id="output3"></p>
+    <p id="output4"></p>
+    <p id="output5"></p>
+    <p id="output6"></p>
+    <p id="output7"></p>
+    <p id="output8"></p>
+    <p id="output9"></p>
+
+    <script>
+
+
+function normalizeArabic(text) {
+    return text
+        .replace(/أ/g, 'ا') // Normalize hamza to alif
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim(); // Trim leading/trailing spaces
+}
+
+var fullquran = '';
+var splitted = []; 
+var startTime = null; 
+
+// Function to read the Quran.txt file
+async function loadQuranText() {
+
+    try {
+        const response = await fetch('Quran.txt');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        fullquran = await response.text();
+        console.log('Quran text loaded successfully');
+    
+        // Initialize the rest of the application after loading Quran text
+        initializeApp();
+    } catch (error) {
+        console.error('Error loading Quran text:', error);
+        // Fallback to a small sample if file loading fails
+        //initializeApp();
+    }
+}
+
+function splitQuranInto114Surahs(fullQuran) {
+  const bismillah = 'بسم الله الرحمن الرحيم';
+  const tawbahStart = 'براءة من الله ورسوله';
+
+  // Step 1: Split using Bismillah
+  let rawSplits = fullQuran.split(bismillah);
+  const surahs = [];
+
+  console.log(rawSplits[1]); //shoud be fatiha , correct
+  console.log(rawSplits[8]); //this is anfal+tawbah
+  //surah tawbah is in rawsplit[8]
+
+  const surah8And9 = rawSplits[8];
+const parts = surah8And9.split("براءة من الله ورسوله");
+
+if (parts.length === 2) {
+  const trueSurah8 = parts[0].trim();
+  const surah9 = "براءة من الله ورسوله" + parts[1].trim();
+
+  // Replace Surah 8 with corrected version
+  rawSplits[8] = trueSurah8;
+
+  // Insert Surah 9 (Tawbah) at index 9, pushing others forward
+  rawSplits.splice(9, 0, surah9);
+
+ // console.log(' Surah 8:', rawSplits[8].substring(0, 100));
+  //console.log(' Surah 9:', rawSplits[9].substring(0, 100));
+  //console.log(' Surah 10:', rawSplits[10].substring(0, 100));
+  //console.log(rawSplits[11]);
+} else {
+  console.warn("⚠️ Could not find Tawbah start in Surah 8");
+}
+return rawSplits;
+}
+
+
+
+function initializeApp() {
+    normalized_quran = normalizeArabic(fullquran);
+    splitted = splitQuranInto114Surahs(fullquran);
+    initializeSpeechRecognition();
+}
+
+function initializeSpeechRecognition() {
+    const startButton = document.getElementById('startButton');
+    const outputElements = [
+        document.getElementById('output1'),
+        document.getElementById('output2'),
+        document.getElementById('output3'),
+        document.getElementById('output4'),
+        document.getElementById('output5'),
+        document.getElementById('output6'),
+        document.getElementById('output7'),
+        document.getElementById('output8'),
+        document.getElementById('output9')
+    ];
+
+    const recognition = new webkitSpeechRecognition(); // For Chrome, use webkitSpeechRecognition
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'ar-SA';
+    let myArray = [];
+    let isRecognizing = false;
+    let speechRecognitionStartTime = null; // Track when speech recognition starts
+    
+    if (!isRecognizing) {
+        console.log('Speech recognition started');
+        recognition.start();
+    }
+    
+    recognition.onstart = () => {
+        console.log('Speech recognition started');
+        isRecognizing = true;
+    };
+
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error !== 'no-speech' && !isRecognizing) {
+            recognition.start();
+        }
+    };
+
+    recognition.onspeechend = () => {
+        console.log("Speech has stopped being detected");
+        location.reload();
+    };
+
+    recognition.onresult = (event) => {
+        // Calculate speech recognition latency
+        if (speechRecognitionStartTime) {
+            const speechRecognitionEndTime = Date.now();
+            const speechRecognitionLatency = (speechRecognitionEndTime - speechRecognitionStartTime); // Keep in milliseconds
+            console.log(`Speech Recognition Latency: ${speechRecognitionLatency} milliseconds`);
+            // Display the speech recognition latency
+            //document.getElementById('output1').textContent = `Speech Recognition Latency: ${speechRecognitionLatency} milliseconds`;
+            // Reset the start time for next recognition
+            speechRecognitionStartTime = null;
+        }
+        
+        var transcript = event.results[event.results.length - 1][0].transcript;
+        console.log(transcript);
+
+        transcript = normalizeArabic(transcript);
+        for (i = 0; i < splitted.length; i++) {
+            startTime = Date.now(); // Start timing for transcription latency from voice activity
+
+            stringSimilarity(splitted[i], transcript, i, startTime);
+           // document.getElementById('output2').textContent = transcript;
+        }
+    };
+
+    recognition.onspeechstart = () => {
+        console.log('Speech started');
+        speechRecognitionStartTime = Date.now(); // Record when speech recognition starts
+    };
+
+    startButton.addEventListener('click', () => {
+        if (!isRecognizing) {
+            console.log('Speech recognition started');
+            recognition.start();
+        }
+    });
+}
+
+function stringSimilarity_secondalgo(a, b) {
+    const regex = new RegExp(b, 'g');  // Create a regex to match substring 'b' in 'a'
+    const matches = a.match(regex);    // Find all matches of 'b' in 'a'
+
+    if (matches) {
+        const matchedSubstring = matches[0]; // Get the matched substring (first match)
+        const similarityScore = matchedSubstring.length / a.length;  // Calculate similarity based on match length
+        return {
+             similarityScore,  // Similarity score as ratio of matched length to 'a' length
+        };
+    } else {
+        return {
+            similarityScore: 0,        // No match, similarity is 0
+            matchedSubstring: null     // No match found
+        };
+    }
+}
+function stringSimilarity(text1, text2, surah, startTime) {
+    // Split both texts into words
+
+    const words1 = text1.split(/\s+/);  // Split by spaces
+    const words2 = text2.split(/\s+/);
+
+    // Create regex for phrases of 5 consecutive words
+    for (let i = 0; i <= words1.length - 5; i++) {
+        const phrase = words1.slice(i, i + 5).join(' ');  // Create 5-word phrase
+        const regex = new RegExp(phrase, 'i');  // Create case-insensitive regex
+
+        if (regex.test(text2)) {
+            console.log(`Matching found: "${phrase}" from surah "${surah}"`);
+            const endTime = Date.now(); // Get the end time
+            const executionTime = (endTime - startTime); // Keep in milliseconds
+            document.getElementById('surahname').textContent = `"${phrase}" from surah "${surah} in ${executionTime} milliseconds"`
+             const matchedText = words1.slice(i).join(' '); // Get text1 starting from the matched index
+
+            document.getElementById('qurantext').textContent =   matchedText.substring(0,1000);
+            return true;  // Return true if 5-word match is found
+        }
+    }
+
+    return false;  // Return false if no match is found
+}
+
+// Start loading the Quran text when the page loads
+loadQuranText();
+    </script>
+</body>
+</html>
