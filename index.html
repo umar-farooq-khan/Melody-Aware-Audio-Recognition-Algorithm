@@ -239,6 +239,7 @@ function initializeSpeechRecognition() {
         }
         
         var transcript = event.results[event.results.length - 1][0].transcript;
+        document.getElementById('output1').textContent = transcript;
         console.log(transcript);
 
         // Show animated dots when speech is detected
